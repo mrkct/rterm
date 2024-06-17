@@ -16,6 +16,54 @@ struct Args {
 
     #[clap(help="Baudrate to use", default_value="115200")]
     baudrate: u32,
+
+    #[clap(help="Data bits", default_value="8", value_parser=parse_data_bits)]
+    data_bits: serialport::DataBits,
+
+    #[clap(help="Parity", default_value="none", value_parser=parse_parity)]
+    parity: serialport::Parity,
+
+    #[clap(help="Stop bits", default_value="1", value_parser=parse_stop_bits)]
+    stop_bits: serialport::StopBits,
+
+    #[clap(help="Flow control", default_value="none", value_parser=parse_flow_control)]
+    flow_control: serialport::FlowControl,
+}
+
+fn parse_data_bits(s: &str) -> Result<serialport::DataBits, String> {
+    match s {
+        "5" => Ok(serialport::DataBits::Five),
+        "6" => Ok(serialport::DataBits::Six),
+        "7" => Ok(serialport::DataBits::Seven),
+        "8" => Ok(serialport::DataBits::Eight),
+        _ => Err(format!("Invalid data bits: {}", s))
+    }
+}
+
+fn parse_parity(s: &str) -> Result<serialport::Parity, String> {
+    match s.to_lowercase().as_ref() {
+        "none" => Ok(serialport::Parity::None),
+        "even" => Ok(serialport::Parity::Even),
+        "odd" => Ok(serialport::Parity::Odd),
+        _ => Err(format!("Invalid parity: {}", s))
+    }
+}
+
+fn parse_stop_bits(s: &str) -> Result<serialport::StopBits, String> {
+    match s {
+        "1" => Ok(serialport::StopBits::One),
+        "2" => Ok(serialport::StopBits::Two),
+        _ => Err(format!("Invalid stop bits: {}", s))
+    }
+}
+
+fn parse_flow_control(s: &str) -> Result<serialport::FlowControl, String> {
+    match s.to_lowercase().as_ref() {
+        "none" => Ok(serialport::FlowControl::None),
+        "hardware" => Ok(serialport::FlowControl::Hardware),
+        "software" => Ok(serialport::FlowControl::Software),
+        _ => Err(format!("Invalid flow control: {}", s))
+    }
 }
 
 #[cfg(target_family = "unix")]
@@ -46,6 +94,10 @@ fn main() {
     let args = Args::parse();
     let mut port = serialport::new(args.path, args.baudrate)
         .timeout(Duration::from_millis(10))
+        .data_bits(args.data_bits)
+        .parity(args.parity)
+        .stop_bits(args.stop_bits)
+        .flow_control(args.flow_control)
         .open()
         .expect("Failed to open port");
 
